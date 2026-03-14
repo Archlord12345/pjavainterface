@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import TeacherDashboard from "@/components/TeacherDashboard";
 import JuryDashboard from "@/components/JuryDashboard";
-import AdminDashboard from "@/components/AdminDashboard";
 
-type UserRole = "enseignant" | "jury" | "admin";
+type UserRole = "enseignant" | "jury";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -15,7 +14,7 @@ export default function Dashboard() {
     const role = localStorage.getItem("userRole") as UserRole | null;
     const user = localStorage.getItem("username") || "";
 
-    if (!role) {
+    if (!role || (role !== "enseignant" && role !== "jury")) {
       navigate("/");
       return;
     }
@@ -48,7 +47,7 @@ export default function Dashboard() {
             <div className="text-sm">
               <p className="font-medium">{username}</p>
               <p className="text-primary-foreground/80 text-xs capitalize">
-                {userRole === "enseignant" ? "Enseignant" : userRole === "jury" ? "Jury" : "Administrateur"}
+                {userRole === "enseignant" ? "Enseignant" : "Jury"}
               </p>
             </div>
             <button
@@ -65,7 +64,6 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto">
         {userRole === "enseignant" && <TeacherDashboard />}
         {userRole === "jury" && <JuryDashboard />}
-        {userRole === "admin" && <AdminDashboard />}
       </main>
     </div>
   );

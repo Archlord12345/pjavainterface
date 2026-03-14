@@ -16,7 +16,7 @@ export default function LoginPage() {
 
       if (username === "prof1") role = "enseignant";
       else if (username === "jury1") role = "jury";
-      else if (username === "admin") role = "admin";
+
 
       if (role && password === "1234") {
         localStorage.setItem("userRole", role);
@@ -93,7 +93,6 @@ export default function LoginPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
             <p style={{ fontSize: "0.75rem", color: "rgb(37, 99, 235)" }}><span style={{ fontWeight: "500" }}>Enseignant:</span> prof1 / 1234</p>
             <p style={{ fontSize: "0.75rem", color: "rgb(37, 99, 235)" }}><span style={{ fontWeight: "500" }}>Jury:</span> jury1 / 1234</p>
-            <p style={{ fontSize: "0.75rem", color: "rgb(37, 99, 235)" }}><span style={{ fontWeight: "500" }}>Admin:</span> admin / 1234</p>
           </div>
         </div>
       </div>
