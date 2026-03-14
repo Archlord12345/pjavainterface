@@ -10,6 +10,8 @@ import { Plus, Trash2 } from "lucide-react";
 interface Grade {
   id: string;
   student: string;
+  matricule: string;
+  filiere: string;
   subject: string;
   type: "CC" | "TP" | "EXAMEN";
   value: number;
@@ -18,30 +20,34 @@ interface Grade {
 
 export default function TeacherDashboard() {
   const [grades, setGrades] = useState<Grade[]>([
-    { id: "1", student: "Jean Nkomo", subject: "Algorithme", type: "CC", value: 15, status: "SAISIE" },
-    { id: "2", student: "Marie Djiep", subject: "Algorithme", type: "EXAMEN", value: 18, status: "VALIDEE" },
-    { id: "3", student: "Pierre Tsafack", subject: "Algorithme", type: "TP", value: 16, status: "SAISIE" },
+    { id: "1", student: "Jean Nkomo", matricule: "23V2112", filiere: "ICT4D", subject: "Algorithme", type: "CC", value: 15, status: "SAISIE" },
+    { id: "2", student: "Marie Djiep", matricule: "23V2113", filiere: "ICT4D", subject: "Algorithme", type: "EXAMEN", value: 18, status: "VALIDEE" },
+    { id: "3", student: "Pierre Tsafack", matricule: "23V2114", filiere: "ICT4D", subject: "Algorithme", type: "TP", value: 16, status: "SAISIE" },
   ]);
 
   const [formData, setFormData] = useState({
     student: "",
+    matricule: "",
+    filiere: "",
     subject: "",
     type: "CC" as "CC" | "TP" | "EXAMEN",
     value: "",
   });
 
   const handleAddGrade = () => {
-    if (formData.student && formData.subject && formData.value) {
+    if (formData.student && formData.matricule && formData.filiere && formData.subject && formData.value) {
       const newGrade: Grade = {
         id: Math.random().toString(),
         student: formData.student,
+        matricule: formData.matricule,
+        filiere: formData.filiere,
         subject: formData.subject,
         type: formData.type,
         value: parseFloat(formData.value),
         status: "SAISIE",
       };
       setGrades([...grades, newGrade]);
-      setFormData({ student: "", subject: "", type: "CC", value: "" });
+      setFormData({ student: "", matricule: "", filiere: "", subject: "", type: "CC", value: "" });
     }
   };
 
@@ -86,11 +92,29 @@ export default function TeacherDashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Étudiant</label>
+              <label className="text-sm font-medium">Étudiant (Nom Complet)</label>
               <Input
-                placeholder="Nom de l'étudiant"
+                placeholder="Ex: Jean Nkomo"
                 value={formData.student}
                 onChange={(e) => setFormData({ ...formData, student: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Matricule</label>
+              <Input
+                placeholder="Ex: 23V2112"
+                value={formData.matricule}
+                onChange={(e) => setFormData({ ...formData, matricule: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Filière</label>
+              <Input
+                placeholder="Ex: ICT4D"
+                value={formData.filiere}
+                onChange={(e) => setFormData({ ...formData, filiere: e.target.value })}
               />
             </div>
 
@@ -153,6 +177,8 @@ export default function TeacherDashboard() {
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead>Étudiant</TableHead>
+                    <TableHead>Matricule</TableHead>
+                    <TableHead>Filière</TableHead>
                     <TableHead>Matière</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead className="text-center">Note</TableHead>
@@ -163,7 +189,7 @@ export default function TeacherDashboard() {
                 <TableBody>
                   {grades.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                         Aucune note saisie pour le moment
                       </TableCell>
                     </TableRow>
@@ -171,6 +197,8 @@ export default function TeacherDashboard() {
                     grades.map((grade) => (
                       <TableRow key={grade.id}>
                         <TableCell className="font-medium">{grade.student}</TableCell>
+                        <TableCell className="text-sm">{grade.matricule}</TableCell>
+                        <TableCell className="text-sm">{grade.filiere}</TableCell>
                         <TableCell>{grade.subject}</TableCell>
                         <TableCell>
                           <Badge className={getTypeColor(grade.type)}>{grade.type}</Badge>

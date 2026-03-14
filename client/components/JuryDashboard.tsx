@@ -5,11 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, AlertCircle, Search } from "lucide-react";
+import { CheckCircle2, AlertCircle, Search, FileText } from "lucide-react";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Grade {
   id: string;
   student: string;
+  matricule: string;
+  filiere: string;
   subject: string;
   type: "CC" | "TP" | "EXAMEN";
   value: number;
@@ -24,6 +28,8 @@ export default function JuryDashboard() {
     {
       id: "1",
       student: "Jean Nkomo",
+      matricule: "23V2112",
+      filiere: "ICT4D",
       subject: "Algorithme",
       type: "CC",
       value: 15,
@@ -33,6 +39,8 @@ export default function JuryDashboard() {
     {
       id: "2",
       student: "Marie Djiep",
+      matricule: "23V2113",
+      filiere: "ICT4D",
       subject: "Algorithme",
       type: "EXAMEN",
       originalValue: 18,
@@ -44,6 +52,8 @@ export default function JuryDashboard() {
     {
       id: "3",
       student: "Pierre Tsafack",
+      matricule: "23V2114",
+      filiere: "ICT4D",
       subject: "Bases de données",
       type: "TP",
       value: 16,
@@ -53,6 +63,8 @@ export default function JuryDashboard() {
     {
       id: "4",
       student: "Sophie Njioguop",
+      matricule: "23V2115",
+      filiere: "ICT4D",
       subject: "Programmation Web",
       type: "EXAMEN",
       value: 14,
@@ -70,6 +82,7 @@ export default function JuryDashboard() {
   const filteredGrades = grades.filter((grade) => {
     const matchesSearch =
       grade.student.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      grade.matricule.toLowerCase().includes(searchTerm.toLowerCase()) ||
       grade.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
       grade.teacher.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === "all" || grade.status === filterStatus;
@@ -111,27 +124,88 @@ export default function JuryDashboard() {
     setModifyComment("");
   };
 
+  const generatePV = (subject: string) => {
+    const doc = new jsPDF();
+    const subjectGrades = grades.filter(g => g.subject === subject);
+
+    // Header
+    doc.setFontSize(10);
+    doc.text("UNIVERSITÉ DE YAOUNDÉ I", 105, 15, { align: "center" });
+    doc.text("FACULTÉ DES SCIENCES", 105, 20, { align: "center" });
+    doc.text("DÉPARTEMENT D'INFORMATIQUE", 105, 25, { align: "center" });
+
+    doc.setFontSize(14);
+    doc.text("PROCES-VERBAL DE SYNTHÈSE DES NOTES", 105, 40, { align: "center" });
+
+    doc.setFontSize(11);
+    doc.text(`Matière: ${subject}`, 20, 50);
+    doc.text(`Année Académique: 2025-2026`, 20, 55);
+    doc.text(`Semestre: 1`, 20, 60);
+
+    // Table
+    const tableData = subjectGrades.map(g => [
+      g.matricule,
+      g.student,
+      g.filiere,
+      `${g.value}/20`,
+      g.status
+    ]);
+
+    autoTable(doc, {
+      startY: 70,
+      head: [['Matricule', 'Nom & Prénom', 'Filière', 'Note', 'Statut']],
+      body: tableData,
+    });
+
+    // Stats
+    const total = subjectGrades.length;
+    const ca = subjectGrades.filter(g => g.value >= 10).length;
+    const statsY = (doc as any).lastAutoTable.finalY + 15;
+
+    doc.text("STATISTIQUES:", 20, statsY);
+    doc.text(`Effectif Total: ${total}`, 20, statsY + 7);
+    doc.text(`Admis (CA): ${ca}`, 20, statsY + 14);
+    doc.text(`Taux de réussite: ${total > 0 ? ((ca/total)*100).toFixed(2) : 0}%`, 20, statsY + 21);
+
+    // Footer
+    const footerY = statsY + 40;
+    doc.text("Le Président du Jury", 40, footerY);
+    doc.text("Les Membres du Jury", 140, footerY);
+
+    doc.save(`PV_${subject}_${new Date().toISOString().slice(0,10)}.pdf`);
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "SAISIE":
-        return <Badge className="bg-blue-100 text-blue-800">En saisie</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">En saisie</Badge>;
       case "MODIFIEE":
-        return <Badge className="bg-amber-100 text-amber-800">Modifiée</Badge>;
+        return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Modifiée</Badge>;
       case "VALIDEE":
-        return <Badge className="bg-green-100 text-green-800">Validée</Badge>;
+        return <Badge className="bg-green-100 text-green-800 border-green-200">Validée</Badge>;
       default:
-        return null;
+        return <Badge>{status}</Badge>;
     }
   };
 
-  const pendingCount = grades.filter((g) => g.status !== "VALIDEE").length;
+  const subjects = Array.from(new Set(grades.map(g => g.subject)));
 
   return (
     <div className="p-6 space-y-6">
       {/* Page Title */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Validation des Notes</h1>
-        <p className="text-muted-foreground mt-1">Consultez, modifiez et validez toutes les notes saisies par les enseignants</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Interface Jury</h1>
+          <p className="text-muted-foreground mt-1">Consultez, modifiez et validez toutes les notes saisies par les enseignants</p>
+        </div>
+        <div className="flex gap-2">
+          {subjects.map(subject => (
+            <Button key={subject} onClick={() => generatePV(subject)} variant="outline" size="sm">
+              <FileText className="w-4 h-4 mr-2" />
+              PV {subject}
+            </Button>
+          ))}
+        </div>
       </div>
 
       {/* Stats */}
@@ -181,7 +255,7 @@ export default function JuryDashboard() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Chercher par étudiant, matière ou enseignant..."
+                  placeholder="Chercher par étudiant, matricule, matière..."
                   className="pl-10"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -209,9 +283,9 @@ export default function JuryDashboard() {
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead>Étudiant</TableHead>
+                    <TableHead>Matricule</TableHead>
                     <TableHead>Matière</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead>Enseignant</TableHead>
                     <TableHead className="text-center">Note</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead className="text-center">Action</TableHead>
@@ -227,10 +301,15 @@ export default function JuryDashboard() {
                   ) : (
                     filteredGrades.map((grade) => (
                       <TableRow key={grade.id} className={grade.status === "VALIDEE" ? "opacity-60" : ""}>
-                        <TableCell className="font-medium">{grade.student}</TableCell>
+                        <TableCell className="font-medium">
+                          <div>
+                            <p>{grade.student}</p>
+                            <p className="text-xs text-muted-foreground">{grade.filiere}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">{grade.matricule}</TableCell>
                         <TableCell>{grade.subject}</TableCell>
                         <TableCell className="text-sm">{grade.type}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{grade.teacher}</TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-2">
                             {grade.originalValue && <span className="line-through text-muted-foreground">{grade.originalValue}</span>}
@@ -265,13 +344,13 @@ export default function JuryDashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2 pb-4 border-b">
-                <p className="text-sm text-muted-foreground">Matière</p>
-                <p className="font-medium">{selectedGrade.subject}</p>
+                <p className="text-sm text-muted-foreground">Matricule</p>
+                <p className="font-medium">{selectedGrade.matricule}</p>
               </div>
 
               <div className="space-y-2 pb-4 border-b">
-                <p className="text-sm text-muted-foreground">Type d'évaluation</p>
-                <p className="font-medium">{selectedGrade.type}</p>
+                <p className="text-sm text-muted-foreground">Matière</p>
+                <p className="font-medium">{selectedGrade.subject}</p>
               </div>
 
               <div className="space-y-2 pb-4 border-b">
